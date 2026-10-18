@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="InvoiceExtract.App/InvoiceExtract.App.csproj" />
+  <Project Path="InvoiceExtract.Evals/InvoiceExtract.Evals.csproj" />
+</Solution>
