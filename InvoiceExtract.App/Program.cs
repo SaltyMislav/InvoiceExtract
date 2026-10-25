@@ -9,10 +9,17 @@ Console.OutputEncoding = Encoding.UTF8;
 Console.InputEncoding = Encoding.UTF8;
 
 const string model = "claude-sonnet-5-5";
+// The adapter defaults to 1,024 output tokens. Non-streaming calls (the extractor) stay at 16K
+// to avoid HTTP timeouts; the streaming chat can safely go higher.
+const int defaultMaxOutputTokens = 16_000;
+const int chatMaxOutputTokens = 64_000;
 
 var history = new List<ChatMessage>();
 var cacheEnabled = true;
-var claude = new CostTrackingChatClient(new AnthropicClient().AsIChatClient(model), model, PrintCallCost);
+var claude = new CostTrackingChatClient(
+    new AnthropicClient().AsIChatClient(model, defaultMaxOutputTokens: defaultMaxOutputTokens),
+    model,
+    PrintCallCost);
 var extractor = new InvoiceExtractor(claude);
 IChatClient chat = claude
     .AsBuilder()
@@ -21,6 +28,7 @@ IChatClient chat = claude
 
 var options = new ChatOptions
 {
+    MaxOutputTokens = chatMaxOutputTokens,
     Tools =
     [
         AIFunctionFactory.Create(Tools.GetExchangeRate),
@@ -65,7 +73,13 @@ while (true)
         updates.Add(update);
     }
 
-    history.AddMessages(updates.ToChatResponse());
+    var response = updates.ToChatResponse();
+    history.AddMessages(response);
+
+    if (response.FinishReason == ChatFinishReason.Length)
+        Console.WriteLine("[upozorenje] Odgovor je prekinut: dosegnut je limit izlaznih tokena.");
+    else if (response.FinishReason == ChatFinishReason.ContentFilter)
+        Console.WriteLine("[upozorenje] Model je odbio odgovoriti.");
 
     Console.WriteLine($"Ukupni trošak sesije: ${claude.TotalUsd:0.000000}");
 }

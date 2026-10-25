@@ -33,9 +33,11 @@ Two fixes, for two different problems:
 - **Cost:** **prompt caching.** The repeated prefix is billed at 10% of the normal input price on a cache read. Measured: −70% input cost on that same conversation (see `PromptCache.cs`).
 - **Size:** caching doesn't make the context smaller. For conversations that would outgrow the window: drop or summarize old turns, clear old tool results (*context editing*), or use server-side *compaction*, which summarizes earlier context automatically.
 
-## In this repo: the hidden 1,024-token cap
+## In this repo: the hidden 1,024-token cap (found and fixed)
 
-`AsIChatClient("claude-sonnet-5-5")` defaults to **`max_tokens` = 1,024** when `ChatOptions.MaxOutputTokens` isn't set. The first answer about PDV used 806 tokens, close to that cap. A longer answer would stop mid-sentence, and a long structured-output JSON would come back unparseable. That's one reason `InvoiceExtractor` handles a failed `TryGetResult`. Fix it by passing a larger default to `AsIChatClient(...)` or setting `MaxOutputTokens`.
+`AsIChatClient("claude-sonnet-5-5")` defaults to **`max_tokens` = 1,024** when `ChatOptions.MaxOutputTokens` isn't set. In week 1 the first answer about PDV used 806 tokens, close to that cap. A longer answer would have stopped mid-sentence, and a long structured-output JSON would have come back unparseable.
+
+The fix (`Program.cs`): the client default is now 16,000 (`AsIChatClient(model, defaultMaxOutputTokens: …)`), which keeps non-streaming calls like the extractor under HTTP timeouts. The streaming chat sets `MaxOutputTokens = 64_000`. Both the chat and `InvoiceExtractor` now check `FinishReason`: a `Length` (cut off) or `ContentFilter` (refused) response is reported instead of being treated as a normal answer. After the fix, a long guide came back complete at **6,758** output tokens.
 
 ## Bigger isn't free
 
@@ -74,7 +76,7 @@ Everything in the request: system prompt, **tool definitions** (the tool-use sys
 2. The context window is the total budget for input + output in one request (1M on current Claude). `max_tokens` is your cap on the output of a single response.
 3. No. Caching makes the repeated prefix cheaper to bill and faster to process, but the tokens are still in the context. Size needs trimming, summarizing, context editing or compaction.
 4. Cost and latency aside, models attend less reliably to information buried in long, noisy contexts. Irrelevant material competes with the relevant passage.
-5. The response hit `max_tokens` (1,024 by default in this adapter) and the JSON was cut off. Check the finish reason, and raise `MaxOutputTokens`.
+5. The response hit `max_tokens` (1,024 by default in this adapter, if you don't set it) and the JSON was cut off. Check the finish reason (`ChatFinishReason.Length`), and set the output cap deliberately.
 
 </details>
 
