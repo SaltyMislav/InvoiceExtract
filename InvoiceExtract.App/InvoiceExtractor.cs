@@ -31,6 +31,11 @@ public class InvoiceExtractor(IChatClient chat, int maxAttempts = 3)
             if (response.Usage is not null)
                 usage.Add(response.Usage);
 
+            // A response cut off at the output limit (Length) or refused (ContentFilter) would end
+            // the same way on a retry, so report it instead of paying for another attempt.
+            if (response.FinishReason is { } finishReason && finishReason != ChatFinishReason.Stop)
+                return new ExtractionResult(racun, [$"The response did not finish normally (finish reason: {finishReason})."], attempt, usage);
+
             if (response.TryGetResult(out var result))
             {
                 racun = result;

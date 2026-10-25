@@ -12,7 +12,7 @@ Measured numbers in these notes come from this repo on 2026-10-25 with `claude-s
 |---|---|---|---|
 | 1 | [Tokenization](week-1/01-tokenization.md) | Models read and bill in tokens, not characters, and Croatian costs ~50% more tokens than English. | [ ] |
 | 2 | [Embeddings](week-1/02-embeddings.md) | Text becomes a vector; similar meaning → nearby vectors. This is the core of RAG retrieval. | [ ] |
-| 3 | [Context window](week-1/03-context-window.md) | Everything the model sees in one request. The API is stateless, so you resend (and pay for) history every turn. | [ ] |
+| 3 | [Context window](week-1/03-context-window.md) | Everything the model sees in one request. The API is stateless, so you resend (and pay for) history every turn. Always set the output cap deliberately. | [ ] |
 | 4 | [Temperature and sampling](week-1/04-temperature-and-sampling.md) | How the next token is picked, and why current Claude models no longer let you tune it. | [ ] |
 
 ## Coming up
