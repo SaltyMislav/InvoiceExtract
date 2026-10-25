@@ -1,0 +1,21 @@
+WEBKOD d.o.o.
+Ilica 112, 10000 Zagreb
+OIB: 69502483115
+IBAN: HR1723600001101234565
+
+RAČUN br. 2026-0417
+Datum izdavanja: 14.10.2026.
+Datum dospijeća: 28.10.2026.
+
+Kupac: Pekara Zrno j.d.o.o., Vukovarska 8, 31000 Osijek, OIB: 45287051629
+
+Rb.  Opis                          Kol.    Jed. cijena    Iznos
+1.   Izrada web stranice           1       800,00         800,00
+2.   Hosting (12 mjeseci)          12      9,50           114,00
+3.   Domena .hr                    1       20,00          20,00
+
+Osnovica:              934,00 EUR
+PDV 25%:               233,50 EUR
+UKUPNO ZA PLATITI:   1.167,50 EUR
+
+Način plaćanja: transakcijski račun
