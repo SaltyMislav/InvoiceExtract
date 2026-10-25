@@ -8,8 +8,11 @@ using Microsoft.Extensions.AI;
 Console.OutputEncoding = Encoding.UTF8;
 Console.InputEncoding = Encoding.UTF8;
 
+const string model = "claude-sonnet-5-5";
+
 var history = new List<ChatMessage>();
-IChatClient claude = new AnthropicClient().AsIChatClient("claude-sonnet-5-5");
+var cacheEnabled = true;
+var claude = new CostTrackingChatClient(new AnthropicClient().AsIChatClient(model), model, PrintCallCost);
 var extractor = new InvoiceExtractor(claude);
 IChatClient chat = claude
     .AsBuilder()
@@ -42,7 +45,15 @@ while (true)
         continue;
     }
 
+    if (entry == "/cache")
+    {
+        cacheEnabled = !cacheEnabled;
+        Console.WriteLine($"Prompt caching je {(cacheEnabled ? "uključen" : "isključen")}.");
+        continue;
+    }
+
     history.Add(new ChatMessage(ChatRole.User, entry));
+    PromptCache.MarkLastMessage(history, cacheEnabled);
     var updates = new List<ChatResponseUpdate>();
 
     await foreach (var update in chat.GetStreamingResponseAsync(history, options))
@@ -53,12 +64,10 @@ while (true)
         Console.Write(update.Text);
         updates.Add(update);
     }
-    Console.WriteLine();
 
-    var response = updates.ToChatResponse();
-    history.AddMessages(response);
+    history.AddMessages(updates.ToChatResponse());
 
-    Console.WriteLine($"Input token: {response.Usage?.InputTokenCount}, Output token: {response.Usage?.OutputTokenCount}");
+    Console.WriteLine($"Ukupni trošak sesije: ${claude.TotalUsd:0.000000}");
 }
 
 async Task ExtractInvoice(string path)
@@ -79,6 +88,12 @@ async Task ExtractInvoice(string path)
     Console.WriteLine(result.IsValid
         ? $"Račun je valjan (pokušaja: {result.Attempts})."
         : $"Račun nije valjan nakon {result.Attempts} pokušaja:\n{string.Join('\n', result.Errors.Select(e => $"  - {e}"))}");
-    Console.WriteLine($"Input token: {result.Usage.InputTokenCount}, Output token: {result.Usage.OutputTokenCount}");
+    Console.WriteLine($"Trošak ekstrakcije: ${CallCost.From(result.Usage, model).Usd:0.000000}");
 }
 
+static void PrintCallCost(CallCost cost)
+{
+    Console.ForegroundColor = ConsoleColor.DarkGray;
+    Console.WriteLine($"\n[poziv] {cost}");
+    Console.ResetColor();
+}
